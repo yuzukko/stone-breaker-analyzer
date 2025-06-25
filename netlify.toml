@@ -1,4 +1,5 @@
 [build]
+  base = ""
   publish = "."
   command = ""
 
@@ -23,13 +24,11 @@
   [headers.values]
     Cache-Control = "public, max-age=0"
 
-# PWA用の設定
+# SPA用のフォールバック（PWA用）
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  conditions = {Role = ["admin"], Country = ["US"]}
-  force = false
 
 # HTTPS強制
 [[headers]]
