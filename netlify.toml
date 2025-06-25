@@ -3,6 +3,9 @@
   publish = "."
   command = ""
 
+[build.environment]
+  NODE_VERSION = "18"
+
 [[headers]]
   for = "/manifest.json"
   [headers.values]
