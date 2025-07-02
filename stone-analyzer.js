@@ -75,6 +75,14 @@ class StoneAnalyzer {
         // 画像サイズを制限してメモリ使用量を削減
         const { canvas: resizedCanvas, ctx: resizedCtx } = this.resizeImageIfNeeded(tempCanvas, tempCtx, 600);
         
+        // スケール情報を保存
+        this.analysisScale = {
+            width: resizedCanvas.width,
+            height: resizedCanvas.height,
+            scaleX: resizedCanvas.width / img.naturalWidth,
+            scaleY: resizedCanvas.height / img.naturalHeight
+        };
+        
         const imageData = resizedCtx.getImageData(0, 0, resizedCanvas.width, resizedCanvas.height);
         const data = imageData.data;
         
@@ -439,6 +447,11 @@ class StoneAnalyzer {
     visualizeResults(cracks, wedgePoints) {
         this.ctx.clearRect(0, 0, this.analysisCanvas.width, this.analysisCanvas.height);
         
+        // より正確なスケール比を計算
+        const canvasScaleX = this.analysisCanvas.width / this.analysisScale.width;
+        const canvasScaleY = this.analysisCanvas.height / this.analysisScale.height;
+        
+        // クラック（緑の線）を描画
         this.ctx.strokeStyle = '#27ae60';
         this.ctx.lineWidth = 3;
         this.ctx.globalAlpha = 0.8;
@@ -447,42 +460,55 @@ class StoneAnalyzer {
             this.ctx.beginPath();
             for (let i = 0; i < crack.points.length; i++) {
                 const point = crack.points[i];
+                const x = point.x * canvasScaleX;
+                const y = point.y * canvasScaleY;
+                
                 if (i === 0) {
-                    this.ctx.moveTo(point.x, point.y);
+                    this.ctx.moveTo(x, y);
                 } else {
-                    this.ctx.lineTo(point.x, point.y);
+                    this.ctx.lineTo(x, y);
                 }
             }
             this.ctx.stroke();
         }
         
+        // セリ矢ポイント（マーカー）を描画
         for (let point of wedgePoints) {
-            const size = 20;
+            const x = point.x * canvasScaleX;
+            const y = point.y * canvasScaleY;
+            const size = 15;
             const priority = point.priority || 0.5;
             
             this.ctx.globalAlpha = 1;
             
+            // 優先度に応じて色を設定
             if (point.type === 'intersection' || priority > 0.7) {
-                this.ctx.fillStyle = '#e74c3c';
+                this.ctx.fillStyle = '#e74c3c'; // 赤
             } else if (priority > 0.4) {
-                this.ctx.fillStyle = '#f39c12';
+                this.ctx.fillStyle = '#f39c12'; // オレンジ
             } else {
-                this.ctx.fillStyle = '#3498db';
+                this.ctx.fillStyle = '#3498db'; // 青
             }
             
+            // 円を描画
             this.ctx.beginPath();
-            this.ctx.arc(point.x, point.y, size, 0, 2 * Math.PI);
+            this.ctx.arc(x, y, size, 0, 2 * Math.PI);
             this.ctx.fill();
             
+            // 白い枠線
             this.ctx.strokeStyle = '#ffffff';
-            this.ctx.lineWidth = 3;
+            this.ctx.lineWidth = 2;
             this.ctx.stroke();
             
+            // × マークを描画
             this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = 'bold 14px Arial';
+            this.ctx.font = 'bold 12px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('×', point.x, point.y + 5);
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText('×', x, y);
         }
+        
+        console.log(`描画完了: クラック${cracks.length}個, ポイント${wedgePoints.length}個`);
     }
 
     displayResults(cracks, wedgePoints) {
