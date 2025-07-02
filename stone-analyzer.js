@@ -445,11 +445,32 @@ class StoneAnalyzer {
     }
 
     visualizeResults(cracks, wedgePoints) {
+        console.log('visualizeResults開始:', {
+            canvasWidth: this.analysisCanvas.width,
+            canvasHeight: this.analysisCanvas.height,
+            analysisScale: this.analysisScale,
+            cracksCount: cracks.length,
+            wedgePointsCount: wedgePoints.length
+        });
+        
         this.ctx.clearRect(0, 0, this.analysisCanvas.width, this.analysisCanvas.height);
+        
+        // analysisScaleが存在しない場合のフォールバック
+        if (!this.analysisScale) {
+            console.warn('analysisScaleが見つかりません。デフォルト値を使用します。');
+            this.analysisScale = {
+                width: 600,
+                height: 400,
+                scaleX: 1,
+                scaleY: 1
+            };
+        }
         
         // より正確なスケール比を計算
         const canvasScaleX = this.analysisCanvas.width / this.analysisScale.width;
         const canvasScaleY = this.analysisCanvas.height / this.analysisScale.height;
+        
+        console.log('スケール情報:', { canvasScaleX, canvasScaleY });
         
         // クラック（緑の線）を描画
         this.ctx.strokeStyle = '#27ae60';
@@ -473,11 +494,20 @@ class StoneAnalyzer {
         }
         
         // セリ矢ポイント（マーカー）を描画
-        for (let point of wedgePoints) {
+        console.log('ポイント描画開始:', wedgePoints.length);
+        for (let i = 0; i < wedgePoints.length; i++) {
+            const point = wedgePoints[i];
             const x = point.x * canvasScaleX;
             const y = point.y * canvasScaleY;
             const size = 15;
             const priority = point.priority || 0.5;
+            
+            console.log(`ポイント${i}:`, { 
+                original: { x: point.x, y: point.y }, 
+                scaled: { x, y }, 
+                priority,
+                canvasSize: { w: this.analysisCanvas.width, h: this.analysisCanvas.height }
+            });
             
             this.ctx.globalAlpha = 1;
             
@@ -506,7 +536,18 @@ class StoneAnalyzer {
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText('×', x, y);
+            
+            // テスト用に大きな赤い四角も描画
+            this.ctx.fillStyle = '#ff0000';
+            this.ctx.fillRect(x-5, y-5, 10, 10);
         }
+        
+        // 強制的に表示されるテスト描画
+        this.ctx.fillStyle = '#ff0000';
+        this.ctx.fillRect(50, 50, 100, 100);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 20px Arial';
+        this.ctx.fillText('TEST', 100, 100);
         
         console.log(`描画完了: クラック${cracks.length}個, ポイント${wedgePoints.length}個`);
     }
