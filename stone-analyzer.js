@@ -55,10 +55,21 @@ class StoneAnalyzer {
 
     setupCanvas() {
         const img = this.originalImage;
-        this.analysisCanvas.width = img.naturalWidth;
-        this.analysisCanvas.height = img.naturalHeight;
-        this.analysisCanvas.style.width = img.offsetWidth + 'px';
-        this.analysisCanvas.style.height = img.offsetHeight + 'px';
+        
+        // 表示サイズに合わせてキャンバスサイズを設定
+        const displayWidth = img.offsetWidth;
+        const displayHeight = img.offsetHeight;
+        
+        this.analysisCanvas.width = displayWidth;
+        this.analysisCanvas.height = displayHeight;
+        this.analysisCanvas.style.width = displayWidth + 'px';
+        this.analysisCanvas.style.height = displayHeight + 'px';
+        
+        console.log('キャンバス設定:', {
+            naturalSize: { w: img.naturalWidth, h: img.naturalHeight },
+            displaySize: { w: displayWidth, h: displayHeight },
+            canvasSize: { w: this.analysisCanvas.width, h: this.analysisCanvas.height }
+        });
         
         this.imageContainer.style.display = 'block';
     }
@@ -466,11 +477,16 @@ class StoneAnalyzer {
             };
         }
         
-        // より正確なスケール比を計算
+        // 表示サイズに合わせた正確なスケール比を計算
         const canvasScaleX = this.analysisCanvas.width / this.analysisScale.width;
         const canvasScaleY = this.analysisCanvas.height / this.analysisScale.height;
         
-        console.log('スケール情報:', { canvasScaleX, canvasScaleY });
+        console.log('スケール情報:', { 
+            canvasScaleX, 
+            canvasScaleY, 
+            analysisSize: this.analysisScale,
+            canvasSize: { w: this.analysisCanvas.width, h: this.analysisCanvas.height }
+        });
         
         // クラック（緑の線）を描画
         this.ctx.strokeStyle = '#27ae60';
@@ -502,11 +518,17 @@ class StoneAnalyzer {
             const size = 15;
             const priority = point.priority || 0.5;
             
+            // 座標が画面外の場合は範囲内にクランプ
+            const clampedX = Math.max(size, Math.min(this.analysisCanvas.width - size, x));
+            const clampedY = Math.max(size, Math.min(this.analysisCanvas.height - size, y));
+            
             console.log(`ポイント${i}:`, { 
                 original: { x: point.x, y: point.y }, 
                 scaled: { x, y }, 
+                clamped: { x: clampedX, y: clampedY },
                 priority,
-                canvasSize: { w: this.analysisCanvas.width, h: this.analysisCanvas.height }
+                canvasSize: { w: this.analysisCanvas.width, h: this.analysisCanvas.height },
+                inBounds: x >= 0 && x <= this.analysisCanvas.width && y >= 0 && y <= this.analysisCanvas.height
             });
             
             this.ctx.globalAlpha = 1;
@@ -520,9 +542,9 @@ class StoneAnalyzer {
                 this.ctx.fillStyle = '#3498db'; // 青
             }
             
-            // 円を描画
+            // クランプされた座標で円を描画
             this.ctx.beginPath();
-            this.ctx.arc(x, y, size, 0, 2 * Math.PI);
+            this.ctx.arc(clampedX, clampedY, size, 0, 2 * Math.PI);
             this.ctx.fill();
             
             // 白い枠線
@@ -535,11 +557,11 @@ class StoneAnalyzer {
             this.ctx.font = 'bold 12px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
-            this.ctx.fillText('×', x, y);
+            this.ctx.fillText('×', clampedX, clampedY);
             
             // テスト用に大きな赤い四角も描画
             this.ctx.fillStyle = '#ff0000';
-            this.ctx.fillRect(x-5, y-5, 10, 10);
+            this.ctx.fillRect(clampedX-5, clampedY-5, 10, 10);
         }
         
         // 強制的に表示されるテスト描画
